@@ -1,7 +1,7 @@
 package config
 
 import (
-	"auth-service/internal/shared/domainerrors"
+	"log/slog"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -17,8 +17,10 @@ type Config struct {
 }
 
 func LoadConfig() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
-		return nil, domainerrors.ErrEnvLoad
+	err := godotenv.Load()
+
+	if err != nil {
+		slog.Error("ERROR: ", "err", err.Error())
 	}
 
 	return &Config{
