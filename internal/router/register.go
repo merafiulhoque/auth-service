@@ -3,6 +3,7 @@ package router
 import (
 	"auth-service/internal/config"
 	"auth-service/internal/features/refresh"
+	requireuser "auth-service/internal/features/requireUser"
 	"auth-service/internal/features/resetpassword"
 	sendotp "auth-service/internal/features/send_otp"
 	"auth-service/internal/features/signin"
@@ -15,6 +16,7 @@ import (
 	"auth-service/internal/shared/otp"
 	"database/sql"
 	"net/http"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/resend/resend-go/v3"
@@ -30,7 +32,8 @@ func RegisterRouter(
 ) {
 	// signup
 	signupHandler := signup.CreateNewHandler(db)
-	mux.Handle(domain.POST_SIGNUP, signupHandler.Signup())
+	signupHandlerWithLimit := middleware.RateLimiter(rdb, 2, 1*time.Minute)(signupHandler.Signup())
+	mux.Handle(domain.POST_SIGNUP, signupHandlerWithLimit)
 
 	//signin
 	signinHandler := signin.CreateNewHandler(db, cfg.JwtSecret, rdb)
@@ -40,14 +43,17 @@ func RegisterRouter(
 	sendOtp := sendotp.CreateNewHandler(db, emailSender, rdb)
 	mux.Handle(domain.POST_SEND_OTP, sendOtp.SendOTP())
 
+	// get user
+	me := requireuser.CreateNewHandler()
+	rateLimiter := middleware.RateLimiter(rdb, 10, 1*time.Minute)
+	authGuard := middleware.AuthMiddleware(cfg.JwtSecret)
+	mux.Handle(domain.GET_ME, rateLimiter(authGuard(me.RequireUser())))
+
 	//signout
 	signout := signout.CreateNewHandler(rdb)
 	mux.Handle(
 		domain.POST_SIGNOUT,
-		middleware.AuthMiddleware(
-			signout.Signout(),
-			cfg.JwtSecret,
-		),
+		middleware.AuthMiddleware(cfg.JwtSecret)(signout.Signout()),
 	)
 
 	//verify otp

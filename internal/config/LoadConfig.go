@@ -20,7 +20,7 @@ func LoadConfig() (*Config, error) {
 	err := godotenv.Load()
 
 	if err != nil {
-		slog.Error("ERROR: ", "err", err.Error())
+		slog.Info("no .env found , relying on environment variables")
 	}
 
 	return &Config{

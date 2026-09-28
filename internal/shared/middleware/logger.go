@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"log/slog"
+	"net"
 	"net/http"
 )
 
@@ -12,7 +13,11 @@ func Logger(next http.Handler) http.Handler {
 		ip := r.Header.Get("X-Forwarded-For")
 
 		if ip == "" {
-			ip = r.RemoteAddr
+			var err error
+			ip, _, err = net.SplitHostPort(r.RemoteAddr)
+			if err != nil {
+				ip = r.RemoteAddr
+			}
 		}
 		endpoint := r.URL.Path
 

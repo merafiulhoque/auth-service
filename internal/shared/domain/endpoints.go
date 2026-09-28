@@ -10,4 +10,5 @@ const (
 	GET_REFRESH          = "GET /api/" + version + "/auth/refresh"
 	POST_RESET_PASSWORD  = "POST /api/" + version + "/auth/reset-password"
 	POST_UPDATE_PASSWORD = "POST /api/" + version + "/auth/update-password"
+	GET_ME               = "GET /api/" + version + "/auth/me"
 )
