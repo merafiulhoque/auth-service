@@ -25,7 +25,6 @@ func main() {
 		slog.Info("ERR: ", "error", err.Error())
 	}
 
-	slog.Info("DB URL ", "URL", cfg.DB_URL)
 	//connect and initiate postgres db and defer close
 	db, err := database.ConnectDB(cfg.DB_URL)
 	if err != nil {
