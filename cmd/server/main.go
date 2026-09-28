@@ -22,7 +22,7 @@ func main() {
 	//Load env
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		slog.Error("ERR: ", "error", err.Error())
+		slog.Info("ERR: ", "error", err.Error())
 		return
 	}
 
