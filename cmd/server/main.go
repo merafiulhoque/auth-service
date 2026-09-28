@@ -23,7 +23,6 @@ func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		slog.Info("ERR: ", "error", err.Error())
-		return
 	}
 
 	//connect and initiate postgres db and defer close
