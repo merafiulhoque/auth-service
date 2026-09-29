@@ -40,7 +40,7 @@ Signup · Signin · Email OTP · JWT Access & Refresh Tokens · Magic-link Passw
 - 🧑‍💻 **Email + password auth** with secure **bcrypt** hashing
 - 🎟️ **JWT access & refresh tokens** for stateless sessions
 - 📧 **Email verification** via 6-digit OTP delivered by **Resend**
-- 🪄 **Password reset** through a one-time magic link
+- 🪄 **Password reset** through a one-time magic link (5-minute expiry, deleted after first use)
 - ⚡ **Upstash Redis** for fast, expiring storage (OTPs, reset tokens, sessions)
 - 🐘 **PostgreSQL** as the durable source of truth for users
 - 🌐 **Header-based auth**: no cookies, no credentialed CORS
@@ -76,7 +76,7 @@ Base path: `/api/v1/auth`
 | `POST` | `/verify-otp`      |           ❌            | Verify email with the 6-digit OTP    |
 | `GET`  | `/refresh`         |  🔁 Refresh token       | Get a new access & refresh token     |
 | `POST` | `/reset-password`  |           ❌            | Email a password reset magic link    |
-| `POST` | `/update-password` |  🎫 Reset token (query) | Set a new password using the token   |
+| `POST` | `/update-password` |  🎫 Reset UUID (query)  | Set a new password using the token   |
 | `GET`  | `/me`              |  ✅ Access token        | Get the current authenticated user   |
 
 ---
@@ -292,7 +292,18 @@ Request a password reset. A magic link is emailed to the user.
 https://<frontend_url>/reset-password?token=<uuid>
 ```
 
+> ⏱️ **The link expires in 5 minutes** and can be used **only once**.
+
 > 💡 **Frontend flow:** when the user lands on this page, show a *new password* field, validate the password client-side, then call `POST /api/v1/auth/update-password?token=<uuid>`.
+
+**How it works under the hood**
+
+1. A random UUID is generated.
+2. Redis stores `RESET_PASSWORD:<uuid>` → `email` with a **5-minute TTL**.
+3. The UUID is emailed to the user as part of the magic link.
+4. On `update-password`, the service looks up the UUID in Redis to find the email.
+
+The UUID itself is the reset token, so no separate token is needed.
 
 ---
 
@@ -316,6 +327,10 @@ Set a new password using the token from the magic link.
   "message": "password updated successfully"
 }
 ```
+
+> 🔥 **Single-use, success or failure:** the Redis entry is deleted as soon as the UUID is looked up, whether the password update succeeds or fails. If anything goes wrong, the user must request a new reset link via `POST /reset-password`.
+>
+> To avoid burning a link on a preventable error, **validate the password on the frontend before calling this endpoint.**
 
 ---
 
@@ -471,8 +486,8 @@ Contributions, issues, and feature requests are welcome!
 
 <div align="center">
 
-Built with ❤️ and Go by [**@merafiulhoque**](https://github.com/merafiulhoque)
+Built in Go by [**@merafiulhoque**](https://github.com/merafiulhoque)
 
-⭐ If this project helped you, consider giving it a star!
+⭐ If this project helped you, consider giving it a star!😊
 
 </div>
