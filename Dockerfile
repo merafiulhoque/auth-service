@@ -1,9 +1,9 @@
 # build stage
-FROM golang:1.26-alpine as builder
-
-RUN apk add --no-cache git ca-certificates
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
+
+RUN apk add --no-cache git ca-certificates
 
 COPY go.mod ./
 

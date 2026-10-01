@@ -11,6 +11,7 @@ import (
 	"auth-service/internal/features/signup"
 	updatepassword "auth-service/internal/features/updatePassword"
 	verifyotp "auth-service/internal/features/verify-otp"
+	"auth-service/internal/features/welcome"
 	"auth-service/internal/shared/domain"
 	"auth-service/internal/shared/middleware"
 	"auth-service/internal/shared/otp"
@@ -30,24 +31,46 @@ func RegisterRouter(
 	emailSender *resend.Client,
 	otpStore *otp.Store,
 ) {
+	//welcome home route
+	rateLimitedWelcomeHandler := middleware.
+		RateLimiter(rdb, 20, 1*time.Minute)(
+		welcome.CreateNewHandler().
+			GETWelcomeAPI())
+	mux.Handle("GET /", rateLimitedWelcomeHandler)
+
 	// signup
-	signupHandler := signup.CreateNewHandler(db)
-	signupHandlerWithLimit := middleware.RateLimiter(rdb, 2, 1*time.Minute)(signupHandler.Signup())
+	signupHandlerWithLimit := middleware.
+		RateLimiter(rdb, 2, 1*time.Minute)(
+		signup.
+			CreateNewHandler(db).
+			Signup())
 	mux.Handle(domain.POST_SIGNUP, signupHandlerWithLimit)
 
 	//signin
-	signinHandler := signin.CreateNewHandler(db, cfg.JwtSecret, rdb)
-	mux.Handle(domain.POST_SIGNIN, signinHandler.Signin())
+	rateLimitedSigninHandler := middleware.
+		AuthMiddleware(cfg.JwtSecret)(
+		signin.CreateNewHandler(db, cfg.JwtSecret, rdb).
+			Signin())
+
+	mux.Handle(domain.POST_SIGNIN, rateLimitedSigninHandler)
 
 	//send otp
-	sendOtp := sendotp.CreateNewHandler(db, emailSender, rdb)
-	mux.Handle(domain.POST_SEND_OTP, sendOtp.SendOTP())
+	rateLimitedSendOtp := middleware.
+		RateLimiter(rdb, 3, 1*time.Minute)(
+		sendotp.CreateNewHandler(db, emailSender, rdb).
+			SendOTP(),
+	)
+	mux.Handle(domain.POST_SEND_OTP, rateLimitedSendOtp)
 
 	// get user
-	me := requireuser.CreateNewHandler()
-	rateLimiter := middleware.RateLimiter(rdb, 10, 1*time.Minute)
-	authGuard := middleware.AuthMiddleware(cfg.JwtSecret)
-	mux.Handle(domain.GET_ME, rateLimiter(authGuard(me.RequireUser())))
+	rateLimitedGetUser := middleware.
+		RateLimiter(rdb, 30, 1*time.Minute)(
+		middleware.AuthMiddleware(cfg.JwtSecret)(
+			requireuser.CreateNewHandler().
+				RequireUser(),
+		),
+	)
+	mux.Handle(domain.GET_ME, rateLimitedGetUser)
 
 	//signout
 	signout := signout.CreateNewHandler(rdb)
@@ -57,18 +80,30 @@ func RegisterRouter(
 	)
 
 	//verify otp
-	verifyOtp := verifyotp.CreateNewHandler(db, rdb, otpStore)
-	mux.Handle(domain.POST_VERIFY_OTP, verifyOtp.VerifyOTP())
+	rateLimitedVerifyOtp := middleware.RateLimiter(rdb, 6, 1*time.Minute)(
+		verifyotp.CreateNewHandler(db, rdb, otpStore).
+			VerifyOTP(),
+	)
+	mux.Handle(domain.POST_VERIFY_OTP, rateLimitedVerifyOtp)
 
 	// refresh
-	refresh := refresh.CreateNewHandler(rdb, cfg.JwtSecret)
-	mux.Handle(domain.GET_REFRESH, refresh.Refresh())
+	rateLimitedRefresh := middleware.RateLimiter(rdb, 5, 1*time.Minute)(
+		refresh.CreateNewHandler(rdb, cfg.JwtSecret).
+			Refresh(),
+	)
+	mux.Handle(domain.GET_REFRESH, rateLimitedRefresh)
 
 	//reset-password -- get reset link
-	resetPasswordLink := resetpassword.CreateNewHandler(db, rdb, emailSender, cfg.AllowedOrigin)
-	mux.Handle(domain.POST_RESET_PASSWORD, resetPasswordLink.ResetPassword())
+	rateLimitedResetPassword := middleware.RateLimiter(rdb, 1, 1*time.Minute)(
+		resetpassword.CreateNewHandler(db, rdb, emailSender, cfg.AllowedOrigin).
+			ResetPassword(),
+	)
+	mux.Handle(domain.POST_RESET_PASSWORD, rateLimitedResetPassword)
 
 	// update password via link
-	updatePassword := updatepassword.CreateNewHandler(db, rdb)
-	mux.Handle(domain.POST_UPDATE_PASSWORD, updatePassword.UpdatePassword())
+	rateLimitedUpdatePassword := middleware.RateLimiter(rdb, 2, 1*time.Minute)(
+		updatepassword.CreateNewHandler(db, rdb).
+			UpdatePassword(),
+	)
+	mux.Handle(domain.POST_UPDATE_PASSWORD, rateLimitedUpdatePassword)
 }
