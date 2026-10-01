@@ -3,7 +3,6 @@ package welcome
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 )
 
 type handler struct{}
@@ -20,10 +19,9 @@ func (h *handler) GETWelcomeAPI() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"service":   "go-auth-microservice",
-			"status":    "healthy",
-			"uptime":    "operational",
-			"timestamp": time.Now(),
+			"service": "go-auth-microservice",
+			"status":  "healthy",
+			"uptime":  "operational",
 		})
 	})
 }
