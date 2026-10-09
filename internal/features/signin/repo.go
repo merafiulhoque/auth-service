@@ -8,16 +8,17 @@ import (
 	"time"
 )
 
-func (r *repo) GetUserByEmail(ctx context.Context, email string) (string, error) {
+func (r *repo) GetUserByEmail(ctx context.Context, email string) (int, string, error) {
+	var id int
 	var hash string
 	if err := r.db.QueryRowContext(ctx,
-		"SELECT password FROM users WHERE email=$1", email).Scan(&hash); err != nil {
+		"SELECT id, password FROM users WHERE email=$1", email).Scan(&id, &hash); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", domainerrors.ErrInvalidCredentials
+			return 0, "", domainerrors.ErrInvalidCredentials
 		}
-		return "", err
+		return 0, "", err
 	}
-	return hash, nil
+	return id, hash, nil
 }
 
 func (r *repo) UpdateLastLoginTime(ctx context.Context, email string) error {

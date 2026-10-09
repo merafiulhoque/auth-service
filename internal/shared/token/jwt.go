@@ -8,12 +8,14 @@ import (
 )
 
 type Claims struct {
-	Email string
+	ID    int    `json:"id"`
+	Email string `json:"email"`
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(email string, secret string) (string, string, error) {
+func GenerateToken(id int, email string, secret string) (string, string, error) {
 	accessClaims := Claims{
+		ID:    id,
 		Email: email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "auth-service",

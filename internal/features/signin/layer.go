@@ -22,7 +22,7 @@ type repo struct {
 }
 
 type SigninRepo interface {
-	GetUserByEmail(ctx context.Context, email string) (string, error)
+	GetUserByEmail(ctx context.Context, email string) (int, string, error)
 	UpdateLastLoginTime(ctx context.Context, email string) error
 }
 

@@ -47,16 +47,15 @@ func RegisterRouter(
 	mux.Handle(domain.POST_SIGNUP, signupHandlerWithLimit)
 
 	//signin
-	rateLimitedSigninHandler := middleware.
-		AuthMiddleware(cfg.JwtSecret)(
-		signin.CreateNewHandler(db, cfg.JwtSecret, rdb).
-			Signin())
+	rateLimitedSigninHandler := middleware.RateLimiter(rdb, 30, 1*time.Minute)(
+		signin.CreateNewHandler(db, cfg.JwtSecret, rdb).Signin(),
+	)
 
 	mux.Handle(domain.POST_SIGNIN, rateLimitedSigninHandler)
 
 	//send otp
 	rateLimitedSendOtp := middleware.
-		RateLimiter(rdb, 3, 1*time.Minute)(
+		RateLimiter(rdb, 30, 1*time.Minute)(
 		sendotp.CreateNewHandler(db, emailSender, rdb).
 			SendOTP(),
 	)
@@ -80,7 +79,7 @@ func RegisterRouter(
 	)
 
 	//verify otp
-	rateLimitedVerifyOtp := middleware.RateLimiter(rdb, 6, 1*time.Minute)(
+	rateLimitedVerifyOtp := middleware.RateLimiter(rdb, 10, 1*time.Minute)(
 		verifyotp.CreateNewHandler(db, rdb, otpStore).
 			VerifyOTP(),
 	)

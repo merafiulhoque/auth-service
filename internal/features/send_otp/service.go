@@ -30,7 +30,7 @@ func (s *service) SendOTPService(ctx context.Context, data sendotp) error {
 	}
 
 	// 3. Save to Redis first (synchronous so we fail fast if Redis is down)
-	if err := s.r.SaveOTPInRedis(ctx, data.Email, otp, 1*time.Minute); err != nil {
+	if err := s.r.SaveOTPInRedis(ctx, data.Email, otp, 2*time.Minute); err != nil {
 		return err
 	}
 

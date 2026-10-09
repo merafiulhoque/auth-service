@@ -11,7 +11,7 @@ import (
 )
 
 func (s *service) SigninService(ctx context.Context, data *SigninRequest) (string, string, error) {
-	hash, err := s.r.GetUserByEmail(ctx, data.Email)
+	id, hash, err := s.r.GetUserByEmail(ctx, data.Email)
 	if err != nil {
 		return "", "", err
 	}
@@ -22,7 +22,7 @@ func (s *service) SigninService(ctx context.Context, data *SigninRequest) (strin
 		return "", "", err
 	}
 
-	accessToken, refreshToken, err := token.GenerateToken(data.Email, s.secret)
+	accessToken, refreshToken, err := token.GenerateToken(id, data.Email, s.secret)
 	if err != nil {
 		return "", "", nil
 	}
