@@ -2,6 +2,7 @@ package router
 
 import (
 	"auth-service/internal/config"
+	getuserid "auth-service/internal/features/getUserId"
 	"auth-service/internal/features/refresh"
 	requireuser "auth-service/internal/features/requireUser"
 	"auth-service/internal/features/resetpassword"
@@ -105,4 +106,10 @@ func RegisterRouter(
 			UpdatePassword(),
 	)
 	mux.Handle(domain.POST_UPDATE_PASSWORD, rateLimitedUpdatePassword)
+
+	//rate limited get user id
+	rateLimitedGetUserId := middleware.RateLimiter(rdb, 30, 1*time.Minute)(
+		getuserid.CreateNewHandler(db).GetUserId(),
+	)
+	mux.Handle(domain.GET_ID, rateLimitedGetUserId)
 }

@@ -8,19 +8,19 @@ import (
 )
 
 type Claims struct {
-	ID    int    `json:"id"`
-	Email string `json:"email"`
+	UserID int    `json:"userId"`
+	Email  string `json:"email"`
 	jwt.RegisteredClaims
 }
 
 func GenerateToken(id int, email string, secret string) (string, string, error) {
 	accessClaims := Claims{
-		ID:    id,
-		Email: email,
+		UserID: id,
+		Email:  email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "auth-service",
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * 60 * time.Minute)),
 			Subject:   "auth",
 		},
 	}
@@ -50,7 +50,7 @@ func GenerateToken(id int, email string, secret string) (string, string, error) 
 	return accessToken, refreshToken, nil
 }
 
-func VerifyToken(token string, secret string) (string, error) {
+func VerifyToken(token string, secret string) (int, string, error) {
 	claims := &Claims{}
 
 	parsedToken, err := jwt.ParseWithClaims(
@@ -66,12 +66,12 @@ func VerifyToken(token string, secret string) (string, error) {
 	)
 
 	if parsedToken == nil || !parsedToken.Valid {
-		return "", domainerrors.TokenErrInvalid
+		return 0, "", domainerrors.TokenErrInvalid
 	}
 
 	if err != nil {
-		return "", err
+		return 0, "", err
 	}
 
-	return claims.Email, nil
+	return claims.UserID, claims.Email, nil
 }

@@ -17,7 +17,7 @@ func AuthMiddleware(secret string) func(http.Handler) http.Handler {
 				return
 			}
 
-			email, err := token.VerifyToken(tokenString, secret)
+			_, email, err := token.VerifyToken(tokenString, secret)
 
 			if err != nil {
 				response.Error(w, http.StatusUnauthorized, err.Error())

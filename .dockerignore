@@ -1,0 +1,11 @@
+.env
+.env*
+.air.toml
+tmp/
+.git
+.gitignore
+.idea
+API_DEMONSTRATION.pdf
+EDGE_CASES.md
+thumbnail.png
+ticket_13.pdf
